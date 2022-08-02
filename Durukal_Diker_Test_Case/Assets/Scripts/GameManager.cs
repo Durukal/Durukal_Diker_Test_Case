@@ -17,9 +17,15 @@ public class GameManager : MonoBehaviour {
     [SerializeField]
     private TMP_Text _scoreText;
 
+    [SerializeField]
+    private TMP_Text _endScoreText;
+
     private int _score;
 
     public Transform ring;
+
+    [SerializeField]
+    private Vector3 _initialScale;
 
     [SerializeField]
     private Vector3 _maxScale;
@@ -33,26 +39,14 @@ public class GameManager : MonoBehaviour {
     [SerializeField]
     private float _scaleChangeDuration;
 
-    private bool _isIncreasing = true;
+    private bool _isIncreasing = false;
 
+    public GameObject gameEndUI;
+    public GameObject gameStartUI;
 
     private void Awake() {
-        _currentMaterialIndex = 0;
-        ChangeBackgroundColor();
-        _score = 1;
-        _scoreText.SetText(_score.ToString());
-        ring.localScale = new Vector3(5.1f, 5.1f, 5.1f);
+        GameStart();
     }
-
-    // IEnumerator Start() {
-    //     while (true) {
-    //         yield return ChangeScale(true);
-    //         yield return ChangeScale(false);
-    //     }
-    // }
-    // private void Start() {
-    //     StartCoroutine(ChangeScale(true));
-    // }
 
     void Update() {
         if (Input.GetKeyUp(KeyCode.E)) {
@@ -64,10 +58,28 @@ public class GameManager : MonoBehaviour {
         }
 
         if (Input.touchCount > 0 && Input.touches[0].phase == TouchPhase.Began) {
+            if (gameStartUI.activeSelf) {
+                gameStartUI.SetActive(false);
+                _scoreText.gameObject.SetActive(true);
+                ring.gameObject.SetActive(true);
+                Time.timeScale = 1;
+            }
+
             _isIncreasing = !_isIncreasing;
         }
 
         if (Input.GetMouseButtonDown(0)) {
+            if (gameStartUI.activeSelf) {
+                gameStartUI.SetActive(false);
+                _scoreText.gameObject.SetActive(true);
+                ring.gameObject.SetActive(true);
+                Time.timeScale = 1;
+            }
+
+            if (gameEndUI.activeSelf) {
+                ResetScene();
+            }
+
             _isIncreasing = !_isIncreasing;
         }
     }
@@ -75,7 +87,22 @@ public class GameManager : MonoBehaviour {
     private void FixedUpdate() {
         if (ring.localScale.x > _minScale.x && ring.localScale.x < _maxScale.x) {
             ChangeScale(_isIncreasing);
+        } else {
+            GameOver();
         }
+    }
+
+    private void GameStart() {
+        gameStartUI.SetActive(true);
+        gameEndUI.SetActive(false);
+        ring.gameObject.SetActive(false);
+        ResetScene();
+    }
+
+    private void GameOver() {
+        Time.timeScale = 0;
+        _endScoreText.text = $"Score:{_scoreText.text}";
+        gameEndUI.SetActive(true);
     }
 
     private void ChangeBackgroundColor() {
@@ -99,6 +126,23 @@ public class GameManager : MonoBehaviour {
             ring.localScale += new Vector3(1f, 1f, 1f) * rate * Time.deltaTime;
         } else {
             ring.localScale -= new Vector3(1f, 1f, 1f) * rate * Time.deltaTime;
+        }
+    }
+
+    private void ResetScene() {
+        _currentMaterialIndex = 0;
+        ChangeBackgroundColor();
+        _score = 1;
+        _scoreText.SetText(_score.ToString());
+        ring.localScale = _initialScale;
+        _scoreText.gameObject.SetActive(false);
+        Time.timeScale = 0;
+        if (gameEndUI.activeSelf) {
+            gameEndUI.SetActive(false);
+        }
+
+        if (!gameStartUI.activeSelf) {
+            gameStartUI.SetActive(true);
         }
     }
 }
